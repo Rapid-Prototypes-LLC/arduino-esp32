@@ -31,10 +31,6 @@
 #define HTTPCLIENT_1_1_COMPATIBLE
 #endif
 
-#ifndef HTTPCLIENT_NOSECURE
-#define HTTPCLIENT_NOSECURE
-#endif
-
 #include <memory>
 #include <Arduino.h>
 #include <NetworkClient.h>
@@ -42,7 +38,7 @@
 #include <NetworkClientSecure.h>
 #endif  // HTTPCLIENT_NOSECURE
 
-/// Cookie jar and header support
+/// Cookie jar support
 #include <vector>
 
 #define HTTPCLIENT_DEFAULT_TCP_TIMEOUT (5000)
@@ -242,7 +238,6 @@ public:
   void addHeader(const String &name, const String &value, bool first = false, bool replace = true);
 
   /// Response handling
-  void collectAllHeaders(bool collectAll = true);
   void collectHeaders(const char *headerKeys[], const size_t headerKeysCount);
   String header(const char *name);   // get request header value by name
   String header(size_t i);           // get request header value by number
@@ -299,7 +294,6 @@ protected:
   uint16_t _tcpTimeout = HTTPCLIENT_DEFAULT_TCP_TIMEOUT;
   bool _useHTTP10 = false;
   bool _secure = false;
-  bool _collectAllHeaders = false;
 
   String _uri;
   String _protocol;
@@ -310,7 +304,8 @@ protected:
   String _acceptEncoding = "identity;q=1,chunked;q=0.1,*;q=0";
 
   /// Response handling
-  std::vector<RequestArgument> _currentHeaders;
+  RequestArgument *_currentHeaders = nullptr;
+  size_t _headerKeysCount = 0;
 
   int _returnCode = 0;
   int _size = -1;

@@ -63,9 +63,9 @@ SPIClass::~SPIClass() {
 #endif
 }
 
-bool SPIClass::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss) {
+void SPIClass::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss) {
   if (_spi) {
-    return true;
+    return;
   }
 
   if (!_div) {
@@ -74,8 +74,7 @@ bool SPIClass::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss) {
 
   _spi = spiStartBus(_spi_num, _div, SPI_MODE0, SPI_MSBFIRST);
   if (!_spi) {
-    log_e("SPI bus %d start failed.", _spi_num);
-    return false;
+    return;
   }
 
   if (sck == -1 && miso == -1 && mosi == -1 && ss == -1) {
@@ -84,8 +83,7 @@ bool SPIClass::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss) {
     _miso = (_spi_num == FSPI) ? MISO : -1;
     _mosi = (_spi_num == FSPI) ? MOSI : -1;
     _ss = (_spi_num == FSPI) ? SS : -1;
-#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 \
-  || CONFIG_IDF_TARGET_ESP32C5
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4
     _sck = SCK;
     _miso = MISO;
     _mosi = MOSI;
@@ -112,11 +110,10 @@ bool SPIClass::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss) {
   if (_mosi >= 0 && !spiAttachMOSI(_spi, _mosi)) {
     goto err;
   }
-  return true;
+  return;
 
 err:
   log_e("Attaching pins to SPI failed.");
-  return false;
 }
 
 void SPIClass::end() {
@@ -145,12 +142,6 @@ void SPIClass::setHwCs(bool use) {
     spiDetachSS(_spi);
   }
   _use_hw_ss = use;
-}
-
-void SPIClass::setSSInvert(bool invert) {
-  if (_spi) {
-    spiSSInvert(_spi, invert);
-  }
 }
 
 void SPIClass::setFrequency(uint32_t freq) {

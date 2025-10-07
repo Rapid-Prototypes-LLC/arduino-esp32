@@ -100,9 +100,6 @@ public:
 
   size_t write(const uint8_t *data, size_t len);
   size_t write(uint8_t data);
-
-  // Copy assignment operator
-  AsyncUDPPacket &operator=(const AsyncUDPPacket &packet);
 };
 
 class AsyncUDP : public Print {

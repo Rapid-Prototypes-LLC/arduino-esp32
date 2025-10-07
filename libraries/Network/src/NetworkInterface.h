@@ -57,10 +57,7 @@ public:
   const char *desc() const;
   String impl_name() const;
   int impl_index() const;
-  int getRoutePrio() const;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 0)
-  int setRoutePrio(int prio);
-#endif
+  int route_prio() const;
   bool setDefault();
   bool isDefault() const;
 

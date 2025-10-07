@@ -52,31 +52,11 @@ HTTPUpdateResult HTTPUpdate::update(NetworkClient &client, const String &url, co
   if (!http.begin(client, url)) {
     return HTTP_UPDATE_FAILED;
   }
-  return handleUpdate(http, currentVersion, U_FLASH, requestCB);
-}
-
-HTTPUpdateResult HTTPUpdate::updateFs(HTTPClient &httpClient, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  return handleUpdate(httpClient, currentVersion, U_FLASHFS, requestCB);
+  return handleUpdate(http, currentVersion, false, requestCB);
 }
 
 HTTPUpdateResult HTTPUpdate::updateSpiffs(HTTPClient &httpClient, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  return handleUpdate(httpClient, currentVersion, U_SPIFFS, requestCB);
-}
-
-HTTPUpdateResult HTTPUpdate::updateFatfs(HTTPClient &httpClient, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  return handleUpdate(httpClient, currentVersion, U_FATFS, requestCB);
-}
-
-HTTPUpdateResult HTTPUpdate::updateLittlefs(HTTPClient &httpClient, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  return handleUpdate(httpClient, currentVersion, U_LITTLEFS, requestCB);
-}
-
-HTTPUpdateResult HTTPUpdate::updateFs(NetworkClient &client, const String &url, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  HTTPClient http;
-  if (!http.begin(client, url)) {
-    return HTTP_UPDATE_FAILED;
-  }
-  return handleUpdate(http, currentVersion, U_FLASHFS, requestCB);
+  return handleUpdate(httpClient, currentVersion, true, requestCB);
 }
 
 HTTPUpdateResult HTTPUpdate::updateSpiffs(NetworkClient &client, const String &url, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
@@ -84,27 +64,11 @@ HTTPUpdateResult HTTPUpdate::updateSpiffs(NetworkClient &client, const String &u
   if (!http.begin(client, url)) {
     return HTTP_UPDATE_FAILED;
   }
-  return handleUpdate(http, currentVersion, U_SPIFFS, requestCB);
-}
-
-HTTPUpdateResult HTTPUpdate::updateFatfs(NetworkClient &client, const String &url, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  HTTPClient http;
-  if (!http.begin(client, url)) {
-    return HTTP_UPDATE_FAILED;
-  }
-  return handleUpdate(http, currentVersion, U_FATFS, requestCB);
-}
-
-HTTPUpdateResult HTTPUpdate::updateLittlefs(NetworkClient &client, const String &url, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  HTTPClient http;
-  if (!http.begin(client, url)) {
-    return HTTP_UPDATE_FAILED;
-  }
-  return handleUpdate(http, currentVersion, U_LITTLEFS, requestCB);
+  return handleUpdate(http, currentVersion, true, requestCB);
 }
 
 HTTPUpdateResult HTTPUpdate::update(HTTPClient &httpClient, const String &currentVersion, HTTPUpdateRequestCB requestCB) {
-  return handleUpdate(httpClient, currentVersion, U_FLASH, requestCB);
+  return handleUpdate(httpClient, currentVersion, false, requestCB);
 }
 
 HTTPUpdateResult
@@ -113,7 +77,7 @@ HTTPUpdateResult
   if (!http.begin(client, host, port, uri)) {
     return HTTP_UPDATE_FAILED;
   }
-  return handleUpdate(http, currentVersion, U_FLASH, requestCB);
+  return handleUpdate(http, currentVersion, false, requestCB);
 }
 
 /**
@@ -194,7 +158,7 @@ String getSketchSHA256() {
  * @param currentVersion const char *
  * @return HTTPUpdateResult
  */
-HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &currentVersion, uint8_t type, HTTPUpdateRequestCB requestCB) {
+HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &currentVersion, bool spiffs, HTTPUpdateRequestCB requestCB) {
 
   HTTPUpdateResult ret = HTTP_UPDATE_FAILED;
 
@@ -223,14 +187,8 @@ HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &curren
   http.addHeader("x-ESP32-chip-size", String(ESP.getFlashChipSize()));
   http.addHeader("x-ESP32-sdk-version", ESP.getSdkVersion());
 
-  if (type == U_SPIFFS) {
+  if (spiffs) {
     http.addHeader("x-ESP32-mode", "spiffs");
-  } else if (type == U_FATFS) {
-    http.addHeader("x-ESP32-mode", "fatfs");
-  } else if (type == U_LITTLEFS) {
-    http.addHeader("x-ESP32-mode", "littlefs");
-  } else if (type == U_FLASHFS) {
-    http.addHeader("x-ESP32-mode", "flashfs");
   } else {
     http.addHeader("x-ESP32-mode", "sketch");
   }
@@ -293,24 +251,8 @@ HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &curren
     case HTTP_CODE_OK:  ///< OK (Start Update)
       if (len > 0) {
         bool startUpdate = true;
-        if (type != U_FLASH) {
-          const esp_partition_t *_partition = NULL;
-          if (type == U_SPIFFS) {
-            _partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
-          } else if (type == U_FATFS) {
-            _partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
-          } else if (type == U_LITTLEFS) {
-            _partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_LITTLEFS, NULL);
-          } else if (type == U_FLASHFS) {
-            _partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
-            if (!_partition) {
-              _partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
-            }
-            if (!_partition) {
-              _partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_LITTLEFS, NULL);
-            }
-          }
-
+        if (spiffs) {
+          const esp_partition_t *_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
           if (!_partition) {
             _lastError = HTTP_UE_NO_PARTITION;
             return HTTP_UPDATE_FAILED;
@@ -349,15 +291,17 @@ HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &curren
 
           delay(100);
 
-          int command = type;
+          int command;
 
-          if (type == U_FLASH) {
-            log_d("runUpdate flash...\n");
+          if (spiffs) {
+            command = U_SPIFFS;
+            log_d("runUpdate spiffs...\n");
           } else {
-            log_d("runUpdate file system...\n");
+            command = U_FLASH;
+            log_d("runUpdate flash...\n");
           }
 
-          if (type == U_FLASH) {
+          if (!spiffs) {
             /* To do
                     uint8_t buf[4];
                     if(tcp->peekBytes(&buf[0], 4) != 4) {
@@ -397,7 +341,7 @@ HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &curren
               _cbEnd();
             }
 
-            if (_rebootOnUpdate && type == U_FLASH) {
+            if (_rebootOnUpdate && !spiffs) {
               ESP.restart();
             }
 
@@ -412,7 +356,6 @@ HTTPUpdateResult HTTPUpdate::handleUpdate(HTTPClient &http, const String &curren
         log_e("Content-Length was 0 or wasn't set by Server?!\n");
       }
       break;
-    case HTTP_CODE_NO_CONTENT:
     case HTTP_CODE_NOT_MODIFIED:
       ///< Not Modified (No updates)
       ret = HTTP_UPDATE_NO_UPDATES;

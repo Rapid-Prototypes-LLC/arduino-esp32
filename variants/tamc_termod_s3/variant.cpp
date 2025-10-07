@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "pins_arduino.h"
 
 float getBatteryVoltage() {
   int analogVolt = analogReadMilliVolts(1);

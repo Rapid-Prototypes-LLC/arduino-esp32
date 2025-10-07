@@ -95,7 +95,6 @@ protected:
   wifi_sort_method_t _sortMethod;
   bool _autoReconnect;
   wl_status_t _status;
-  network_event_handle_t _wifi_sta_event_handle;
 
   size_t printDriverInfo(Print &out) const;
 

@@ -152,8 +152,7 @@ esp_modem_dce_t *PPPClass::handle() const {
 
 PPPClass::PPPClass()
   : _dce(NULL), _pin_tx(-1), _pin_rx(-1), _pin_rts(-1), _pin_cts(-1), _flow_ctrl(ESP_MODEM_FLOW_CONTROL_NONE), _pin_rst(-1), _pin_rst_act_low(true),
-    _pin_rst_delay(200), _pin(NULL), _apn(NULL), _rx_buffer_size(4096), _tx_buffer_size(512), _mode(ESP_MODEM_MODE_COMMAND), _uart_num(UART_NUM_1),
-    _ppp_event_handle(0) {}
+    _pin_rst_delay(200), _pin(NULL), _apn(NULL), _rx_buffer_size(4096), _tx_buffer_size(512), _mode(ESP_MODEM_MODE_COMMAND), _uart_num(UART_NUM_1) {}
 
 PPPClass::~PPPClass() {}
 
@@ -361,7 +360,7 @@ bool PPPClass::begin(ppp_modem_model_t model, uint8_t uart_num, int baud_rate) {
     }
   }
 
-  _ppp_event_handle = Network.onSysEvent(onPppArduinoEvent);
+  Network.onSysEvent(onPppArduinoEvent);
 
   setStatusBits(ESP_NETIF_STARTED_BIT);
   arduino_event_t arduino_event;
@@ -403,8 +402,7 @@ void PPPClass::end(void) {
   }
   _esp_modem = NULL;
 
-  Network.removeEvent(_ppp_event_handle);
-  _ppp_event_handle = 0;
+  Network.removeEvent(onPppArduinoEvent);
 
   if (_dce != NULL) {
     esp_modem_destroy(_dce);
@@ -430,11 +428,6 @@ void PPPClass::end(void) {
   if (_pin_cts != -1) {
     pin = _pin_cts;
     _pin_cts = -1;
-    perimanClearPinBus(pin);
-  }
-  if (_pin_rst != -1) {
-    pin = _pin_rst;
-    _pin_rst = -1;
     perimanClearPinBus(pin);
   }
 

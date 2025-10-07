@@ -467,7 +467,7 @@ void WebServer::handleClient() {
       case HC_WAIT_CLOSE:
         if (_currentClient.isSSE()) {
           // Never close connection
-          //_statusChange = millis();
+          _statusChange = millis();
         }
         // Wait for client to close the connection
         if (millis() - _statusChange <= HTTP_MAX_CLOSE_WAIT) {
@@ -502,16 +502,6 @@ void WebServer::stop() {
 }
 
 void WebServer::sendHeader(const String &name, const String &value, bool first) {
-  if (name.indexOf('\r') != -1 || name.indexOf('\n') != -1) {
-    log_e("Invalid character in HTTP header name");
-    return;
-  }
-
-  if (value.indexOf('\r') != -1 || value.indexOf('\n') != -1) {
-    log_e("Invalid character in HTTP header value");
-    return;
-  }
-
   RequestArgument *header = new RequestArgument();
   header->key = name;
   header->value = value;

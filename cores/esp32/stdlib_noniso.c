@@ -49,7 +49,7 @@ char *ltoa(long value, char *result, int base) {
   }
 
   char *out = result;
-  long quotient = labs(value);
+  long quotient = abs(value);
 
   do {
     const long tmp = quotient / base;

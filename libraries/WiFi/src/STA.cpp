@@ -228,8 +228,7 @@ void STAClass::_onStaEvent(int32_t event_id, void *event_data) {
 }
 
 STAClass::STAClass()
-  : _minSecurity(WIFI_AUTH_WPA2_PSK), _scanMethod(WIFI_FAST_SCAN), _sortMethod(WIFI_CONNECT_AP_BY_SIGNAL), _autoReconnect(true), _status(WL_STOPPED),
-    _wifi_sta_event_handle(0) {
+  : _minSecurity(WIFI_AUTH_WPA2_PSK), _scanMethod(WIFI_FAST_SCAN), _sortMethod(WIFI_CONNECT_AP_BY_SIGNAL), _autoReconnect(true), _status(WL_STOPPED) {
   _sta_network_if = this;
 }
 
@@ -277,15 +276,14 @@ bool STAClass::onEnable() {
       return false;
     }
     /* attach to receive events */
-    _wifi_sta_event_handle = Network.onSysEvent(_onStaArduinoEvent);
+    Network.onSysEvent(_onStaArduinoEvent);
     initNetif(ESP_NETIF_ID_STA);
   }
   return true;
 }
 
 bool STAClass::onDisable() {
-  Network.removeEvent(_wifi_sta_event_handle);
-  _wifi_sta_event_handle = 0;
+  Network.removeEvent(_onStaArduinoEvent);
   // we just set _esp_netif to NULL here, so destroyNetif() does not try to destroy it.
   // That would be done by WiFi.enableSTA(false) if AP is not enabled, or when it gets disabled
   _esp_netif = NULL;

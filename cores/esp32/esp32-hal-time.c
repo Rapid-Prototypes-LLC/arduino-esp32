@@ -22,24 +22,24 @@
 #endif
 
 static void setTimeZone(long offset, int daylight) {
-  char cst[21] = {0};
-  char cdt[21] = "DST";
-  char tz[41] = {0};
+  char cst[17] = {0};
+  char cdt[17] = "DST";
+  char tz[33] = {0};
 
   if (offset % 3600) {
-    snprintf(cst, sizeof(cst), "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
+    sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
   } else {
-    snprintf(cst, sizeof(cst), "UTC%ld", offset / 3600);
+    sprintf(cst, "UTC%ld", offset / 3600);
   }
   if (daylight != 3600) {
     long tz_dst = offset - daylight;
     if (tz_dst % 3600) {
-      snprintf(cdt, sizeof(cdt), "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
+      sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
     } else {
-      snprintf(cdt, sizeof(cdt), "DST%ld", tz_dst / 3600);
+      sprintf(cdt, "DST%ld", tz_dst / 3600);
     }
   }
-  snprintf(tz, sizeof(tz), "%s%s", cst, cdt);
+  sprintf(tz, "%s%s", cst, cdt);
   setenv("TZ", tz, 1);
   tzset();
 }

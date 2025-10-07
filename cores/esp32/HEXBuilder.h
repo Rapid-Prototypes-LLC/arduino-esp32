@@ -23,8 +23,6 @@
 #include <WString.h>
 #include <Stream.h>
 
-// Basic hex/byte conversion class to be used by hash builders
-
 class HEXBuilder {
 public:
   static size_t hex2bytes(unsigned char *out, size_t maxlen, String &in);
